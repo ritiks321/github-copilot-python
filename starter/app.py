@@ -15,7 +15,16 @@ def index():
 
 @app.route('/new')
 def new_game():
-    clues = int(request.args.get('clues', 35))
+    difficulty = request.args.get('difficulty', 'medium').lower()
+    
+    # Map difficulty levels to number of clues
+    difficulty_map = {
+        'easy': 45,      # Remove 36 cells (45 clues)
+        'medium': 35,    # Remove 46 cells (35 clues)
+        'hard': 25       # Remove 56 cells (25 clues)
+    }
+    
+    clues = difficulty_map.get(difficulty, 35)
     puzzle, solution = sudoku_logic.generate_puzzle(clues)
     CURRENT['puzzle'] = puzzle
     CURRENT['solution'] = solution
@@ -24,6 +33,10 @@ def new_game():
 @app.route('/check', methods=['POST'])
 def check_solution():
     data = request.json
+    # Catch the missing field early
+    if not data or 'board' not in data or data['board'] is None:
+        return jsonify({"error": "Missing board field"}), 400
+        
     board = data.get('board')
     solution = CURRENT.get('solution')
     if solution is None:
